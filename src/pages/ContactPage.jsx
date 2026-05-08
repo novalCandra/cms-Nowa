@@ -1,264 +1,258 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, Phone, MapPin, Send, CheckCircle, MessageSquare, Briefcase, User } from 'lucide-react'
+import { Mail, Send, CheckCircle, Briefcase, User } from 'lucide-react'
+import { contacts } from '../data/ContactData'
+import { useServices } from '../hooks/useServices'
 
-const inputStyle = (isDark, border, focused) => ({
-    width: '100%', padding: '14px 16px', borderRadius: 12,
-    border: `1px solid ${focused ? '#6EA8FF' : border}`,
-    background: isDark ? (focused ? 'rgba(110,168,255,0.06)' : 'rgba(255,255,255,0.03)') : (focused ? 'rgba(110,168,255,0.05)' : 'rgba(0,0,0,0.02)'),
-    color: isDark ? '#E8E8F0' : '#1A1A2E',
-    fontSize: 15, fontFamily: 'Nunito, sans-serif',
-    outline: 'none', transition: 'all 0.2s',
-    boxShadow: focused ? '0 0 0 3px rgba(110,168,255,0.1)' : 'none',
-})
+function InputBase({ focused, isDark }) {
+  return `w-full px-4 py-3.5 rounded-xl border text-[15px] font-[Nunito] outline-none transition-all ${
+    focused
+      ? 'border-[#6EA8FF] shadow-[0_0_0_3px_rgba(110,168,255,0.1)]'
+      : isDark ? 'border-[rgba(110,168,255,0.12)]' : 'border-[rgba(110,168,255,0.2)]'
+  } ${
+    focused
+      ? isDark ? 'bg-[rgba(110,168,255,0.06)]' : 'bg-[rgba(110,168,255,0.05)]'
+      : isDark ? 'bg-[rgba(255,255,255,0.03)]' : 'bg-[rgba(0,0,0,0.02)]'
+  } ${isDark ? 'text-[#E8E8F0]' : 'text-[#1A1A2E]'}`
+}
 
 export default function Contact({ isDark }) {
-    const [form, setForm] = useState({ name: '', email: '', service: '', message: '' })
-    const [focused, setFocused] = useState(null)
-    const [sent, setSent] = useState(false)
-    const [loading, setLoading] = useState(false)
+  const [form, setForm] = useState({ name: '', email: '', service: '', message: '' })
+  const [focused, setFocused] = useState(null)
+  const [sent, setSent] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-    const text = isDark ? '#E8E8F0' : '#1A1A2E'
-    const muted = isDark ? '#8888A8' : '#6060A0'
-    const cardBg = isDark ? '#16161F' : '#FFFFFF'
-    const border = isDark ? 'rgba(110,168,255,0.12)' : 'rgba(110,168,255,0.2)'
+  const { services, loading: servicesLoading, error: servicesError, retry } = useServices()
 
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-        setLoading(true)
-        await new Promise(r => setTimeout(r, 1500))
-        setLoading(false)
-        setSent(true)
-    }
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    await new Promise((r) => setTimeout(r, 1500))
+    setLoading(false)
+    setSent(true)
+  }
 
-    const contacts = [
-        { icon: Mail, label: 'Email', value: 'freeenowadev@gmail.com', color: '#6EA8FF' },
-        { icon: Phone, label: 'Telepon', value: '+62 21 1234 5678', color: '#A78BFA' },
-        { icon: MapPin, label: 'Alamat', value: 'Jakarta Selatan, Indonesia', color: '#6EA8FF' },
-        { icon: MessageSquare, label: 'WhatsApp', value: '+62 881 0274 49163', color: '#A78BFA' },
-    ]
+  const inputClass = (field) => InputBase({ focused: focused === field, isDark })
 
-    return (
-        <div style={{ paddingTop: 100 }}>
-            <section style={{ padding: '5rem 2rem 8rem' }}>
-                <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '4rem', alignItems: 'start' }} className="contact-grid">
-                        {/* Left Info */}
-                        <motion.div
-                            initial={{ opacity: 0, x: -40 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                        >
-                            <span style={{
-                                display: 'inline-block', padding: '6px 16px', borderRadius: 100,
-                                background: 'rgba(110,168,255,0.1)', border: '1px solid rgba(110,168,255,0.25)',
-                                color: '#6EA8FF', fontSize: 13, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
-                                marginBottom: 24,
-                            }}>Hubungi Kami</span>
+  return (
+    <div className="pt-[100px]">
+      <section className="px-8 pt-20 pb-32">
+        <div className="max-w-[1280px] mx-auto">
+          <div className="grid grid-cols-[1fr_1.4fr] max-[900px]:grid-cols-1 gap-16 items-start">
 
-                            <h1 style={{
-                                fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800,
-                                fontSize: 'clamp(2rem, 4vw, 3.5rem)', lineHeight: 1.1,
-                                letterSpacing: '-0.03em', color: text, marginBottom: 20,
-                            }}>
-                                Siap Memulai<br />
-                                <span style={{ background: 'linear-gradient(90deg, #6EA8FF, #A78BFA)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                                    Perjalanan Digital
-                                </span>
-                                <br />Anda?
-                            </h1>
+            {/* ── Left Info ── */}
+            <motion.div
+              initial={{ opacity: 0, x: -40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <span className="inline-block px-4 py-1.5 rounded-full bg-[rgba(110,168,255,0.1)] border border-[rgba(110,168,255,0.25)] text-[#6EA8FF] text-[13px] font-semibold tracking-widest uppercase mb-6">
+                Hubungi Kami
+              </span>
 
-                            <p style={{ color: muted, fontSize: 16, lineHeight: 1.75, marginBottom: 40 }}>
-                                Ceritakan proyek impian Anda kepada kami. Tim NOWA.IO akan segera menghubungi Anda dalam 24 jam untuk konsultasi gratis.
-                            </p>
+              <h1 className={`font-[Plus_Jakarta_Sans] font-extrabold leading-[1.1] tracking-[-0.03em] text-[clamp(2rem,4vw,3.5rem)] mb-5 ${isDark ? 'text-[#E8E8F0]' : 'text-[#1A1A2E]'}`}>
+                Siap Memulai<br />
+                <span className="bg-gradient-to-r from-[#6EA8FF] to-[#A78BFA] bg-clip-text text-transparent">
+                  Perjalanan Digital
+                </span>
+                <br />Anda?
+              </h1>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 40 }}>
-                                {contacts.map((c, i) => (
-                                    <motion.div
-                                        key={c.label}
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: 0.3 + i * 0.1 }}
-                                        style={{ display: 'flex', alignItems: 'center', gap: 14 }}
-                                    >
-                                        <div style={{
-                                            width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                                            background: `${c.color}12`, border: `1px solid ${c.color}25`,
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        }}>
-                                            <c.icon size={18} color={c.color} />
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: 12, color: muted, fontWeight: 500, marginBottom: 2 }}>{c.label}</div>
-                                            <div style={{ fontSize: 15, color: text, fontWeight: 600 }}>{c.value}</div>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
+              <p className={`text-base leading-[1.75] mb-10 ${isDark ? 'text-[#8888A8]' : 'text-[#6060A0]'}`}>
+                Ceritakan proyek impian Anda kepada kami. Tim NOWA.IO akan segera menghubungi Anda dalam 24 jam untuk konsultasi gratis.
+              </p>
 
-                            {/* Response Time Badge */}
-                            <div style={{
-                                padding: '16px 20px', borderRadius: 14,
-                                background: isDark ? 'rgba(110,168,255,0.06)' : 'rgba(110,168,255,0.08)',
-                                border: `1px solid rgba(110,168,255,0.15)`,
-                                display: 'flex', alignItems: 'center', gap: 12,
-                            }}>
-                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 8px #4ade80', flexShrink: 0 }} />
-                                <span style={{ color: muted, fontSize: 13, lineHeight: 1.5 }}>
-                                    Rata-rata waktu respons: <strong style={{ color: text }}>kurang dari 4 jam</strong> pada hari kerja
-                                </span>
-                            </div>
-                        </motion.div>
-
-                        {/* Form */}
-                        <motion.div
-                            initial={{ opacity: 0, x: 40 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                            style={{
-                                padding: '2.5rem', borderRadius: 20,
-                                background: cardBg, border: `1px solid ${border}`,
-                            }}
-                        >
-                            <AnimatePresence mode="wait">
-                                {sent ? (
-                                    <motion.div
-                                        key="success"
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        style={{ textAlign: 'center', padding: '3rem 1rem' }}
-                                    >
-                                        <motion.div
-                                            initial={{ scale: 0 }}
-                                            animate={{ scale: 1 }}
-                                            transition={{ type: 'spring', delay: 0.1, bounce: 0.5 }}
-                                            style={{ marginBottom: 20 }}
-                                        >
-                                            <CheckCircle size={64} color="#6EA8FF" style={{ margin: '0 auto' }} />
-                                        </motion.div>
-                                        <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 24, color: text, marginBottom: 12 }}>Pesan Terkirim!</h3>
-                                        <p style={{ color: muted, lineHeight: 1.7 }}>
-                                            Terima kasih telah menghubungi kami. Tim NOWA akan segera merespons pesan Anda dalam waktu 24 jam.
-                                        </p>
-                                        <motion.button
-                                            whileHover={{ scale: 1.04 }}
-                                            onClick={() => { setSent(false); setForm({ name: '', email: '', service: '', message: '' }) }}
-                                            style={{
-                                                marginTop: 24, padding: '12px 28px', borderRadius: 10, border: `1px solid ${border}`,
-                                                background: 'transparent', color: '#6EA8FF', fontSize: 14, fontWeight: 600,
-                                                cursor: 'pointer', fontFamily: 'Nunito, sans-serif',
-                                            }}
-                                        >Kirim Pesan Lagi</motion.button>
-                                    </motion.div>
-                                ) : (
-                                    <motion.form
-                                        key="form"
-                                        initial={{ opacity: 1 }}
-                                        onSubmit={handleSubmit}
-                                        style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
-                                    >
-                                        <div>
-                                            <h2 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, fontSize: 22, color: text, marginBottom: 6 }}>Ceritakan Proyek Anda</h2>
-                                            {/* <p style={{ color: muted, fontSize: 14 }}>Semua field dengan * wajib diisi</p> */}
-                                        </div>
-
-                                        {[
-                                            { field: 'name', label: 'Nama Lengkap', placeholder: 'Budi Santoso', icon: User, type: 'text' },
-                                            { field: 'email', label: 'Email', placeholder: 'budi@perusahaan.com', icon: Mail, type: 'email' },
-                                        ].map(({ field, label, placeholder, icon: Icon, type }) => (
-                                            <div key={field}>
-                                                <label style={{ display: 'block', fontWeight: 600, fontSize: 14, color: text, marginBottom: 8 }}>{label}</label>
-                                                <div style={{ position: 'relative' }}>
-                                                    <input
-                                                        type={type}
-                                                        value={form[field]}
-                                                        onChange={e => setForm(p => ({ ...p, [field]: e.target.value }))}
-                                                        onFocus={() => setFocused(field)}
-                                                        onBlur={() => setFocused(null)}
-                                                        placeholder={placeholder}
-                                                        required
-                                                        style={{ ...inputStyle(isDark, border, focused === field), paddingLeft: 44 }}
-                                                    />
-                                                    <Icon size={16} color={muted} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-                                                </div>
-                                            </div>
-                                        ))}
-
-                                        <div>
-                                            <label style={{ display: 'block', fontWeight: 600, fontSize: 14, color: text, marginBottom: 8 }}>
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Briefcase size={14} />Layanan yang Dibutuhkan</span>
-                                            </label>
-                                            <select
-                                                value={form.service}
-                                                onChange={e => setForm(p => ({ ...p, service: e.target.value }))}
-                                                required
-                                                style={{ ...inputStyle(isDark, border, focused === 'service'), appearance: 'none' }}
-                                                onFocus={() => setFocused('service')}
-                                                onBlur={() => setFocused(null)}
-                                            >
-                                                <option value="">Pilih layanan...</option>
-                                                <option value="web">Web Development</option>
-                                                <option value="ux">UI/UX Design</option>
-                                                <option value="mobile">Mobile App</option>
-                                                <option value="marketing">Digital Marketing</option>
-                                                <option value="branding">Branding</option>
-                                                <option value="other">Lainnya</option>
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <label style={{ display: 'block', fontWeight: 600, fontSize: 14, color: text, marginBottom: 8 }}>Pesan</label>
-                                            <textarea
-                                                value={form.message}
-                                                onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
-                                                onFocus={() => setFocused('message')}
-                                                onBlur={() => setFocused(null)}
-                                                placeholder="Ceritakan lebih detail tentang proyek, kebutuhan, dan timeline Anda..."
-                                                required
-                                                rows={5}
-                                                style={{ ...inputStyle(isDark, border, focused === 'message'), resize: 'vertical' }}
-                                            />
-                                        </div>
-
-                                        <motion.button
-                                            whileHover={{ scale: 1.03, boxShadow: '0 0 40px rgba(110,168,255,0.35)' }}
-                                            whileTap={{ scale: 0.97 }}
-                                            type="submit"
-                                            disabled={loading}
-                                            style={{
-                                                padding: '15px 32px', borderRadius: 12, border: 'none',
-                                                background: loading ? 'rgba(110,168,255,0.5)' : 'linear-gradient(90deg, #6EA8FF, #A78BFA)',
-                                                color: '#fff', fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 16,
-                                                cursor: loading ? 'not-allowed' : 'pointer',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                                            }}
-                                        >
-                                            {loading ? (
-                                                <>
-                                                    <motion.div
-                                                        animate={{ rotate: 360 }}
-                                                        transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
-                                                        style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%' }}
-                                                    />
-                                                    Mengirim...
-                                                </>
-                                            ) : (
-                                                <><Send size={18} /> Kirim Pesan</>
-                                            )}
-                                        </motion.button>
-                                    </motion.form>
-                                )}
-                            </AnimatePresence>
-                        </motion.div>
+              {/* Contact Items — dari contactData.js */}
+              <div className="flex flex-col gap-4 mb-10">
+                {contacts.map((c, i) => (
+                  <motion.div
+                    key={c.label}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 + i * 0.1 }}
+                    className="flex items-center gap-3.5"
+                  >
+                    <div
+                      className="w-11 h-11 rounded-xl flex-shrink-0 flex items-center justify-center"
+                      style={{
+                        background: `${c.color}12`,
+                        border: `1px solid ${c.color}25`,
+                      }}
+                    >
+                      <c.icon size={18} color={c.color} />
                     </div>
-                </div>
-            </section>
+                    <div>
+                      <div className={`text-[12px] font-medium mb-0.5 ${isDark ? 'text-[#8888A8]' : 'text-[#6060A0]'}`}>{c.label}</div>
+                      <div className={`text-[15px] font-semibold ${isDark ? 'text-[#E8E8F0]' : 'text-[#1A1A2E]'}`}>{c.value}</div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
 
-            <style>{`
-        @media (max-width: 900px) {
-          .contact-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
+            {/* ── Form Card ── */}
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className={`p-10 rounded-[20px] border ${isDark ? 'bg-[#16161F] border-[rgba(110,168,255,0.12)]' : 'bg-white border-[rgba(110,168,255,0.2)]'}`}
+            >
+              <AnimatePresence mode="wait">
+                {sent ? (
+                  <motion.div
+                    key="success"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-center py-8"
+                  >
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
+                      className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[rgba(74,222,128,0.1)] border border-[rgba(74,222,128,0.2)] mb-6"
+                    >
+                      <CheckCircle size={36} color="#4ADE80" />
+                    </motion.div>
+                    <h3 className={`font-[Plus_Jakarta_Sans] font-bold text-2xl mb-3 ${isDark ? 'text-[#E8E8F0]' : 'text-[#1A1A2E]'}`}>
+                      Pesan Terkirim! 🎉
+                    </h3>
+                    <p className={`text-sm leading-[1.7] mb-6 ${isDark ? 'text-[#8888A8]' : 'text-[#6060A0]'}`}>
+                      Terima kasih telah menghubungi kami. Tim NOWA.IO akan segera merespons dalam 24 jam.
+                    </p>
+                    <motion.button
+                      whileHover={{ scale: 1.04 }}
+                      onClick={() => setSent(false)}
+                      className={`mt-6 px-7 py-3 rounded-xl border bg-transparent text-[#6EA8FF] text-sm font-semibold cursor-pointer font-[Nunito] ${isDark ? 'border-[rgba(110,168,255,0.12)]' : 'border-[rgba(110,168,255,0.2)]'}`}
+                    >
+                      Kirim Pesan Lagi
+                    </motion.button>
+                  </motion.div>
+                ) : (
+                  <motion.form
+                    key="form"
+                    onSubmit={handleSubmit}
+                    className="flex flex-col gap-5"
+                  >
+                    <h2 className={`font-[Plus_Jakarta_Sans] font-bold text-[22px] mb-1 ${isDark ? 'text-[#E8E8F0]' : 'text-[#1A1A2E]'}`}>
+                      Ceritakan Proyek Anda
+                    </h2>
+
+                    {/* Name & Email */}
+                    {[
+                      { field: 'name', label: 'Nama Lengkap', placeholder: 'Budi Santoso', icon: User, type: 'text' },
+                      { field: 'email', label: 'Email', placeholder: 'budi@perusahaan.com', icon: Mail, type: 'email' },
+                    ].map(({ field, label, placeholder, icon: Icon, type }) => (
+                      <div key={field}>
+                        <label className={`block font-semibold text-sm mb-2 ${isDark ? 'text-[#E8E8F0]' : 'text-[#1A1A2E]'}`}>{label}</label>
+                        <div className="relative">
+                          <input
+                            type={type}
+                            value={form[field]}
+                            onChange={(e) => setForm((p) => ({ ...p, [field]: e.target.value }))}
+                            onFocus={() => setFocused(field)}
+                            onBlur={() => setFocused(null)}
+                            placeholder={placeholder}
+                            required
+                            className={`${inputClass(field)} pl-11`}
+                          />
+                          <Icon size={16} color="#8888A8" className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Service Select — dari useServices hook */}
+                    <div>
+                      <label className={`flex items-center gap-1.5 font-semibold text-sm mb-2 ${isDark ? 'text-[#E8E8F0]' : 'text-[#1A1A2E]'}`}>
+                        <Briefcase size={14} /> Layanan yang Dibutuhkan
+                      </label>
+
+                      {servicesLoading ? (
+                        <div className={`w-full px-4 py-3.5 rounded-xl border font-[Nunito] flex items-center gap-2 ${isDark ? 'bg-[rgba(255,255,255,0.03)] border-[rgba(110,168,255,0.12)] text-[#8888A8]' : 'bg-[rgba(0,0,0,0.02)] border-[rgba(110,168,255,0.2)] text-[#6060A0]'}`}>
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                            className="w-4 h-4 border-2 border-[rgba(110,168,255,0.3)] border-t-[#6EA8FF] rounded-full flex-shrink-0"
+                          />
+                          <span className="text-sm">Memuat layanan...</span>
+                        </div>
+                      ) : servicesError ? (
+                        <div className={`w-full px-4 py-3.5 rounded-xl border text-[13px] font-[Nunito] flex items-center justify-between gap-3 ${isDark ? 'bg-[rgba(255,100,100,0.05)] border-[rgba(255,100,100,0.2)] text-[#FF6B6B]' : 'bg-[rgba(255,100,100,0.04)] border-[rgba(255,100,100,0.2)] text-[#CC4444]'}`}>
+                          <span className="truncate">{servicesError}</span>
+                          <button
+                            type="button"
+                            onClick={retry}
+                            className="text-[#6EA8FF] underline text-[13px] font-semibold cursor-pointer flex-shrink-0"
+                          >
+                            Coba lagi
+                          </button>
+                        </div>
+                      ) : (
+                        <select
+                          value={form.service}
+                          onChange={(e) => setForm((p) => ({ ...p, service: e.target.value }))}
+                          required
+                          onFocus={() => setFocused('service')}
+                          onBlur={() => setFocused(null)}
+                          className={`${inputClass('service')} appearance-none`}
+                        >
+                          <option value="">Pilih layanan...</option>
+                          {services.map((o) => (
+                            <option key={o.id ?? o.value} value={o.id ?? o.value}>
+                              {o.nama ?? o.label}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+
+                    {/* Message */}
+                    <div>
+                      <label className={`block font-semibold text-sm mb-2 ${isDark ? 'text-[#E8E8F0]' : 'text-[#1A1A2E]'}`}>Pesan</label>
+                      <textarea
+                        value={form.message}
+                        onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))}
+                        onFocus={() => setFocused('message')}
+                        onBlur={() => setFocused(null)}
+                        placeholder="Ceritakan lebih detail tentang proyek, kebutuhan, dan timeline Anda..."
+                        required
+                        rows={5}
+                        className={`${inputClass('message')} resize-y`}
+                      />
+                    </div>
+
+                    {/* Submit */}
+                    <motion.button
+                      whileHover={{ scale: loading ? 1 : 1.03, boxShadow: loading ? 'none' : '0 0 40px rgba(110,168,255,0.35)' }}
+                      whileTap={{ scale: loading ? 1 : 0.97 }}
+                      type="submit"
+                      disabled={loading || servicesLoading}
+                      className={`py-[15px] px-8 rounded-xl border-none text-white font-[Nunito] font-bold text-base flex items-center justify-center gap-2.5 transition-all ${
+                        loading || servicesLoading
+                          ? 'bg-[rgba(110,168,255,0.5)] cursor-not-allowed'
+                          : 'bg-gradient-to-r from-[#6EA8FF] to-[#A78BFA] cursor-pointer'
+                      }`}
+                    >
+                      {loading ? (
+                        <>
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+                            className="w-[18px] h-[18px] border-2 border-[rgba(255,255,255,0.3)] border-t-white rounded-full"
+                          />
+                          Mengirim...
+                        </>
+                      ) : (
+                        <><Send size={18} /> Kirim Pesan</>
+                      )}
+                    </motion.button>
+                  </motion.form>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+          </div>
         </div>
-    )
+      </section>
+    </div>
+  )
 }

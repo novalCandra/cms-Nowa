@@ -5,14 +5,6 @@ import { Sun, Moon, Menu, X } from 'lucide-react'
 import logoNowaDark from '../assets/logo-nowa-dark.png'
 import logoNowaLight from '../assets/logo-nowa-light.png'
 
-const navLinks = [
-    { label: 'Beranda', path: '/' },
-    { label: 'Layanan', path: '/layanan' },
-    { label: 'Portofolio', path: '/portofolio' },
-    { label: 'Berita', path: '/berita' },
-    { label: 'Kontak', path: '/kontak' },
-]
-
 export default function Navbar({ isDark, setIsDark }) {
     const [scrolled, setScrolled] = useState(false)
     const [mobileOpen, setMobileOpen] = useState(false)
@@ -26,12 +18,17 @@ export default function Navbar({ isDark, setIsDark }) {
 
     useEffect(() => setMobileOpen(false), [location])
 
-    const bg = isDark
-        ? scrolled ? 'rgba(10,10,15,0.92)' : 'transparent'
-        : scrolled ? 'rgba(240,244,255,0.92)' : 'transparent'
+    const navItemClass = (path) =>
+        `px-4 py-2 rounded-lg font-[Nunito] font-medium text-[15px] transition-all cursor-pointer ${
+            location.pathname === path
+                ? 'text-[#6EA8FF] bg-[rgba(110,168,255,0.1)]'
+                : isDark ? 'text-[#E8E8F0]' : 'text-[#1A1A2E]'
+        }`
 
-    const textColor = isDark ? '#E8E8F0' : '#1A1A2E'
-    const borderColor = isDark ? 'rgba(110,168,255,0.1)' : 'rgba(110,168,255,0.2)'
+    const mobileItemClass = (path) =>
+        `py-3.5 border-b font-[Plus_Jakarta_Sans] font-semibold text-lg ${
+            isDark ? 'border-[rgba(110,168,255,0.1)]' : 'border-[rgba(110,168,255,0.2)]'
+        } ${location.pathname === path ? 'text-[#6EA8FF]' : isDark ? 'text-[#E8E8F0]' : 'text-[#1A1A2E]'}`
 
     return (
         <>
@@ -39,80 +36,56 @@ export default function Navbar({ isDark, setIsDark }) {
                 initial={{ y: -80, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    zIndex: 1000,
-                    background: bg,
-                    backdropFilter: scrolled ? 'blur(20px)' : 'none',
-                    borderBottom: scrolled ? `1px solid ${borderColor}` : 'none',
-                    transition: 'all 0.4s ease',
-                    padding: '0 2rem',
-                }}
+                className={`fixed top-0 left-0 right-0 z-[1000] px-8 transition-all duration-400 ${scrolled
+                        ? isDark
+                            ? 'bg-[rgba(10,10,15,0.92)] backdrop-blur-xl border-b border-[rgba(110,168,255,0.1)]'
+                            : 'bg-[rgba(240,244,255,0.92)] backdrop-blur-xl border-b border-[rgba(110,168,255,0.2)]'
+                        : 'bg-transparent'
+                    }`}
             >
-                <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 72 }}>
+                <div className="max-w-[1280px] mx-auto flex items-center justify-between h-[72px]">
                     {/* Logo */}
-                    <Link to="/" style={{ textDecoration: 'none' }}>
-                        <motion.div
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.97 }}
-                            style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-                        >
+                    <Link to="/" className="no-underline">
+                        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="flex items-center cursor-pointer">
                             <img
                                 key={isDark ? 'logo-dark' : 'logo-light'}
                                 src={isDark ? logoNowaDark : logoNowaLight}
                                 alt="NOWA"
-                                width={130}
-                                height={36}
-                                style={{
-                                    height: 150,
-                                    width: 'auto',
-                                    display: 'block',
-                                    userSelect: 'none',
-                                    transition: 'opacity 0.3s ease',
-                                }}
+                                className="h-[150px] w-auto block select-none transition-opacity duration-300"
                             />
                         </motion.div>
                     </Link>
 
                     {/* Desktop Links */}
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }} className="hidden-mobile">
-                        {navLinks.map((link) => {
-                            const isActive = location.pathname === link.path
-                            return (
-                                <Link key={link.path} to={link.path} style={{ textDecoration: 'none' }}>
-                                    <motion.div
-                                        whileHover={{ y: -1 }}
-                                        style={{
-                                            padding: '8px 16px', borderRadius: 8,
-                                            fontFamily: 'Nunito, sans-serif', fontWeight: 500, fontSize: 15,
-                                            color: isActive ? '#6EA8FF' : textColor,
-                                            background: isActive ? 'rgba(110,168,255,0.1)' : 'transparent',
-                                            transition: 'all 0.2s',
-                                            cursor: 'pointer',
-                                        }}
-                                    >{link.label}</motion.div>
-                                </Link>
-                            )
-                        })}
+                    <div className="hidden md:flex gap-2 items-center">
+                        <Link to="/" className="no-underline">
+                            <motion.div whileHover={{ y: -1 }} className={navItemClass('/')}>Beranda</motion.div>
+                        </Link>
+                        <Link to="/layanan" className="no-underline">
+                            <motion.div whileHover={{ y: -1 }} className={navItemClass('/layanan')}>Layanan</motion.div>
+                        </Link>
+                        <Link to="/portofolio" className="no-underline">
+                            <motion.div whileHover={{ y: -1 }} className={navItemClass('/portofolio')}>Portofolio</motion.div>
+                        </Link>
+                        <Link to="/berita" className="no-underline">
+                            <motion.div whileHover={{ y: -1 }} className={navItemClass('/berita')}>Berita</motion.div>
+                        </Link>
+                        <Link to="/kontak" className="no-underline">
+                            <motion.div whileHover={{ y: -1 }} className={navItemClass('/kontak')}>Kontak</motion.div>
+                        </Link>
                     </div>
 
                     {/* Right Controls */}
-                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <div className="flex gap-3 items-center">
                         {/* Dark Mode Toggle */}
                         <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                             onClick={() => setIsDark(!isDark)}
-                            style={{
-                                width: 40, height: 40, borderRadius: 10,
-                                border: `1px solid ${borderColor}`,
-                                background: isDark ? 'rgba(110,168,255,0.08)' : 'rgba(110,168,255,0.12)',
-                                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: textColor, transition: 'all 0.2s',
-                            }}
+                            className={`w-10 h-10 rounded-xl border flex items-center justify-center cursor-pointer transition-all ${isDark
+                                    ? 'border-[rgba(110,168,255,0.1)] bg-[rgba(110,168,255,0.08)] text-[#E8E8F0]'
+                                    : 'border-[rgba(110,168,255,0.2)] bg-[rgba(110,168,255,0.12)] text-[#1A1A2E]'
+                                }`}
                         >
                             <AnimatePresence mode="wait">
                                 <motion.div
@@ -128,30 +101,22 @@ export default function Navbar({ isDark, setIsDark }) {
                         </motion.button>
 
                         {/* CTA Button */}
-                        <Link to="/kontak" style={{ textDecoration: 'none' }} className="hidden-mobile">
+                        <Link to="/kontak" className="no-underline hidden md:block">
                             <motion.button
                                 whileHover={{ scale: 1.04, boxShadow: '0 0 30px rgba(110,168,255,0.35)' }}
                                 whileTap={{ scale: 0.97 }}
-                                style={{
-                                    padding: '10px 22px', borderRadius: 10, border: 'none',
-                                    background: 'linear-gradient(90deg, #6EA8FF, #A78BFA)',
-                                    color: '#fff', fontFamily: 'Nunito, sans-serif', fontWeight: 600, fontSize: 14,
-                                    cursor: 'pointer', letterSpacing: '0.01em',
-                                }}
-                            >Mulai Proyek</motion.button>
+                                className="px-[22px] py-2.5 rounded-xl border-none bg-gradient-to-r from-[#6EA8FF] to-[#A78BFA] text-white font-[Nunito] font-semibold text-sm cursor-pointer tracking-[0.01em]"
+                            >
+                                Mulai Proyek
+                            </motion.button>
                         </Link>
 
                         {/* Mobile Hamburger */}
                         <motion.button
                             whileTap={{ scale: 0.9 }}
                             onClick={() => setMobileOpen(!mobileOpen)}
-                            style={{
-                                display: 'none', width: 40, height: 40, borderRadius: 10,
-                                border: `1px solid ${borderColor}`,
-                                background: 'transparent', cursor: 'pointer',
-                                alignItems: 'center', justifyContent: 'center', color: textColor,
-                            }}
-                            className="show-mobile"
+                            className={`md:hidden w-10 h-10 rounded-xl border bg-transparent cursor-pointer flex items-center justify-center transition-all ${isDark ? 'border-[rgba(110,168,255,0.1)] text-[#E8E8F0]' : 'border-[rgba(110,168,255,0.2)] text-[#1A1A2E]'
+                                }`}
                         >
                             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
                         </motion.button>
@@ -167,43 +132,39 @@ export default function Navbar({ isDark, setIsDark }) {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                        style={{
-                            position: 'fixed', top: 72, left: 0, right: 0, zIndex: 999,
-                            background: isDark ? 'rgba(10,10,15,0.97)' : 'rgba(240,244,255,0.97)',
-                            backdropFilter: 'blur(20px)',
-                            borderBottom: `1px solid ${borderColor}`,
-                            padding: '1.5rem 2rem',
-                        }}
+                        className={`fixed top-[72px] left-0 right-0 z-[999] backdrop-blur-xl px-8 py-6 border-b ${isDark
+                                ? 'bg-[rgba(10,10,15,0.97)] border-[rgba(110,168,255,0.1)]'
+                                : 'bg-[rgba(240,244,255,0.97)] border-[rgba(110,168,255,0.2)]'
+                            }`}
                     >
-                        {navLinks.map((link, i) => (
-                            <motion.div
-                                key={link.path}
-                                initial={{ x: -20, opacity: 0 }}
-                                animate={{ x: 0, opacity: 1 }}
-                                transition={{ delay: i * 0.05 }}
-                            >
-                                <Link to={link.path} style={{ textDecoration: 'none' }}>
-                                    <div style={{
-                                        padding: '14px 0', borderBottom: `1px solid ${borderColor}`,
-                                        fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 600, fontSize: 18,
-                                        color: location.pathname === link.path ? '#6EA8FF' : textColor,
-                                    }}>{link.label}</div>
-                                </Link>
-                            </motion.div>
-                        ))}
+                        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.00 }}>
+                            <Link to="/" className="no-underline">
+                                <div className={mobileItemClass('/')}>Beranda</div>
+                            </Link>
+                        </motion.div>
+                        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.05 }}>
+                            <Link to="/layanan" className="no-underline">
+                                <div className={mobileItemClass('/layanan')}>Layanan</div>
+                            </Link>
+                        </motion.div>
+                        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.10 }}>
+                            <Link to="/portofolio" className="no-underline">
+                                <div className={mobileItemClass('/portofolio')}>Portofolio</div>
+                            </Link>
+                        </motion.div>
+                        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.15 }}>
+                            <Link to="/berita" className="no-underline">
+                                <div className={mobileItemClass('/berita')}>Berita</div>
+                            </Link>
+                        </motion.div>
+                        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.20 }}>
+                            <Link to="/kontak" className="no-underline">
+                                <div className={mobileItemClass('/kontak')}>Kontak</div>
+                            </Link>
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
-
-            <style>{`
-        @media (max-width: 768px) {
-          .hidden-mobile { display: none !important; }
-          .show-mobile { display: flex !important; }
-        }
-        @media (min-width: 769px) {
-          .show-mobile { display: none !important; }
-        }
-      `}</style>
         </>
     )
 }

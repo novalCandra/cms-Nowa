@@ -1,195 +1,329 @@
-import { motion } from 'framer-motion'
-import { Calendar, Clock, ArrowRight, Tag } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Calendar, ArrowRight, X, Newspaper } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useNews, useNewsDetail } from '../hooks/useNews'
+import { PageHero, SkeletonCard, SkeletonFeatured, ErrorState } from '../components/SharedUI'
 
-const news = [
-  {
-    title: 'NOWA Raih Penghargaan Best Digital Agency 2025',
-    excerpt: 'Kami dengan bangga mengumumkan bahwa NOWA berhasil meraih penghargaan prestisius Best Digital Agency Indonesia 2025 dari Indonesia Digital Awards.',
-    cat: 'Penghargaan', date: '28 Apr 2026', readTime: '3 min',
-    grad: 'linear-gradient(135deg, #6EA8FF22, #A78BFA33)',
-    featured: true,
-  },
-  {
-    title: 'Tren Web Design 2026: Apa yang Harus Anda Tahu',
-    excerpt: 'Temukan tren desain web terbaru yang akan mendominasi tahun 2026, dari glassmorphism hingga motion design yang semakin imersif.',
-    cat: 'Insight', date: '22 Apr 2026', readTime: '5 min',
-    grad: 'linear-gradient(135deg, #A78BFA22, #6EA8FF22)',
-  },
-  {
-    title: 'Mengapa UX yang Baik Meningkatkan Konversi Hingga 400%',
-    excerpt: 'Studi terbaru menunjukkan korelasi langsung antara investasi UX design dengan peningkatan signifikan dalam tingkat konversi dan retensi pengguna.',
-    cat: 'Artikel', date: '15 Apr 2026', readTime: '7 min',
-    grad: 'linear-gradient(135deg, #6EA8FF33, #A78BFA22)',
-  },
-  {
-    title: 'NOWA Berhasil Selesaikan Proyek Flagship untuk Tokopedia',
-    excerpt: 'Tim NOWA berhasil meluncurkan redesign total platform dashboard seller Tokopedia yang kini melayani lebih dari 10 juta merchant aktif.',
-    cat: 'Proyek', date: '10 Apr 2026', readTime: '4 min',
-    grad: 'linear-gradient(135deg, #A78BFA33, #6EA8FF22)',
-  },
-  {
-    title: 'React 20 Rilis: Fitur Baru yang Mengubah Cara Kita Develop',
-    excerpt: 'Versi terbaru React membawa perubahan besar dalam cara kita membangun aplikasi web. Berikut fitur-fitur utama yang perlu Anda ketahui.',
-    cat: 'Teknologi', date: '5 Apr 2026', readTime: '6 min',
-    grad: 'linear-gradient(135deg, #6EA8FF22, #A78BFA44)',
-  },
-  {
-    title: 'Workshop UI/UX Gratis untuk 50 Peserta Terpilih',
-    excerpt: 'Daftarkan diri Anda untuk mengikuti workshop intensif UI/UX Design yang dipandu langsung oleh lead designer NOWA.',
-    cat: 'Event', date: '1 Apr 2026', readTime: '2 min',
-    grad: 'linear-gradient(135deg, #A78BFA44, #6EA8FF33)',
-  },
-]
-
-const catColors = {
-  Penghargaan: '#6EA8FF', Insight: '#A78BFA', Artikel: '#6EA8FF',
-  Proyek: '#A78BFA', Teknologi: '#6EA8FF', Event: '#A78BFA',
+function formatDate(dateStr) {
+    if (!dateStr) return ''
+    return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
-export default function News({ isDark }) {
-  const text = isDark ? '#E8E8F0' : '#1A1A2E'
-  const muted = isDark ? '#8888A8' : '#6060A0'
-  const cardBg = isDark ? '#16161F' : '#FFFFFF'
-  const border = isDark ? 'rgba(110,168,255,0.12)' : 'rgba(110,168,255,0.2)'
+function readingTime(text) {
+    if (!text) return '1 menit'
+    const words = text.split(' ').length
+    const minutes = Math.max(1, Math.round(words / 200))
+    return `${minutes} menit`
+}
 
-  const featured = news[0]
-  const rest = news.slice(1)
+// Detail Modal
+function DetailModal({ articleId, onClose }) {
+    const { article, loading, error } = useNewsDetail(articleId)
 
-  return (
-    <div style={{ paddingTop: 100 }}>
-      <section style={{ padding: '5rem 2rem 4rem', textAlign: 'center' }}>
-        <div style={{ maxWidth: 640, margin: '0 auto' }}>
-          <motion.span
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            style={{
-              display: 'inline-block', padding: '6px 16px', borderRadius: 100,
-              background: 'rgba(110,168,255,0.1)', border: '1px solid rgba(110,168,255,0.25)',
-              color: '#6EA8FF', fontSize: 13, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
-              marginBottom: 20,
-            }}>Berita & Insight</motion.span>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            style={{
-              fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800,
-              fontSize: 'clamp(2.5rem, 5vw, 4rem)', lineHeight: 1.1,
-              letterSpacing: '-0.03em', color: text, marginBottom: 16,
-            }}>
-            Cerita & <span style={{ background: 'linear-gradient(90deg, #6EA8FF, #A78BFA)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Update</span> Terbaru
-          </motion.h1>
-
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} style={{ color: muted, fontSize: 16, lineHeight: 1.75 }}>
-            Temukan artikel, insight, dan update terbaru dari tim NOWA.IO tentang dunia digital dan teknologi.
-          </motion.p>
-        </div>
-      </section>
-
-      <section style={{ padding: '0 2rem 8rem' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-          {/* Featured */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            whileHover={{ y: -4, boxShadow: '0 24px 80px rgba(110,168,255,0.12)' }}
-            style={{
-              borderRadius: 20, overflow: 'hidden',
-              background: cardBg, border: `1px solid ${border}`,
-              marginBottom: 32, cursor: 'pointer', display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              transition: 'box-shadow 0.3s',
-            }}
-            className="featured-card"
-          >
-            <div style={{ height: 320, background: featured.grad, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-              <div style={{
-                width: 100, height: 100, borderRadius: 20,
-                background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255,255,255,0.12)',
-              }} />
-              <span style={{
-                position: 'absolute', top: 20, left: 20,
-                padding: '6px 14px', borderRadius: 8,
-                background: 'rgba(110,168,255,0.9)', color: '#fff',
-                fontSize: 12, fontWeight: 700, letterSpacing: '0.04em',
-              }}>⭐ Featured</span>
-            </div>
-            <div style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '4px 12px', borderRadius: 6, marginBottom: 16,
-                background: `${catColors[featured.cat]}15`,
-                color: catColors[featured.cat], fontSize: 12, fontWeight: 700,
-                width: 'fit-content',
-              }}>
-                <Tag size={11} />{featured.cat}
-              </span>
-              <h2 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 24, color: text, lineHeight: 1.3, marginBottom: 12 }}>{featured.title}</h2>
-              <p style={{ color: muted, fontSize: 14, lineHeight: 1.7, marginBottom: 24 }}>{featured.excerpt}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: muted, fontSize: 13 }}>
-                  <Calendar size={13} />{featured.date}
-                </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: muted, fontSize: 13 }}>
-                  <Clock size={13} />{featured.readTime} baca
-                </span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-            {rest.map((article, i) => (
-              <motion.div
-                key={article.title}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
-                whileHover={{ y: -6, boxShadow: '0 20px 60px rgba(110,168,255,0.1)' }}
-                style={{
-                  borderRadius: 16, overflow: 'hidden',
-                  background: cardBg, border: `1px solid ${border}`,
-                  cursor: 'pointer', transition: 'box-shadow 0.3s',
-                }}
-              >
-                <div style={{ height: 160, background: article.grad, position: 'relative' }}>
-                  <span style={{
-                    position: 'absolute', top: 14, left: 14,
-                    display: 'inline-flex', alignItems: 'center', gap: 5,
-                    padding: '4px 10px', borderRadius: 6,
-                    background: `${catColors[article.cat]}22`, backdropFilter: 'blur(8px)',
-                    color: catColors[article.cat], fontSize: 11, fontWeight: 700,
-                  }}>
-                    <Tag size={10} />{article.cat}
-                  </span>
-                </div>
-                <div style={{ padding: '1.25rem' }}>
-                  <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, fontSize: 16, color: text, lineHeight: 1.4, marginBottom: 10 }}>{article.title}</h3>
-                  <p style={{ color: muted, fontSize: 13, lineHeight: 1.65, marginBottom: 16 }}>{article.excerpt}</p>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', gap: 14 }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: muted, fontSize: 12 }}>
-                        <Calendar size={11} />{article.date}
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: muted, fontSize: 12 }}>
-                        <Clock size={11} />{article.readTime}
-                      </span>
-                    </div>
-                    <motion.div whileHover={{ x: 3 }} style={{ color: '#6EA8FF', cursor: 'pointer' }}>
-                      <ArrowRight size={16} />
-                    </motion.div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <style>{`
-        @media (max-width: 768px) {
-          .featured-card { grid-template-columns: 1fr !important; }
+    useEffect(() => {
+        document.body.style.overflow = 'hidden'
+        const onKey = (e) => { if (e.key === 'Escape') onClose() }
+        window.addEventListener('keydown', onKey)
+        return () => {
+            document.body.style.overflow = ''
+            window.removeEventListener('keydown', onKey)
         }
-      `}</style>
-    </div>
-  )
+    }, [])
+
+    return (
+        <AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={onClose}
+                className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4"
+            >
+                <motion.div
+                    initial={{ opacity: 0, y: 40, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 40, scale: 0.96 }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    onClick={e => e.stopPropagation()}
+                    className="relative w-full max-w-[720px] max-h-[90vh] overflow-y-auto rounded-[28px] bg-[#0D0D1A] border border-[rgba(110,168,255,0.1)] shadow-[0_60px_120px_rgba(0,0,0,0.85)]"
+                >
+                    {/* Close button — selalu tampil */}
+                    <motion.button
+                        whileHover={{ scale: 1.1, rotate: 90 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={onClose}
+                        className="absolute top-4 right-4 z-10 w-9 h-9 rounded-xl bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/60 hover:text-white cursor-pointer"
+                    >
+                        <X size={15} />
+                    </motion.button>
+
+                    {/* Loading state */}
+                    {loading && (
+                        <div className="flex flex-col gap-4 p-8 pt-12">
+                            <div className="w-full h-56 rounded-2xl bg-[rgba(110,168,255,0.06)] animate-pulse" />
+                            <div className="flex gap-2">
+                                <div className="h-6 w-28 rounded-full bg-[rgba(110,168,255,0.06)] animate-pulse" />
+                                <div className="h-6 w-20 rounded-full bg-[rgba(255,255,255,0.04)] animate-pulse" />
+                            </div>
+                            <div className="h-7 w-3/4 rounded-lg bg-[rgba(110,168,255,0.06)] animate-pulse" />
+                            <div className="h-4 w-full rounded bg-[rgba(255,255,255,0.04)] animate-pulse" />
+                            <div className="h-4 w-5/6 rounded bg-[rgba(255,255,255,0.04)] animate-pulse" />
+                            <div className="h-4 w-4/5 rounded bg-[rgba(255,255,255,0.04)] animate-pulse" />
+                        </div>
+                    )}
+
+                    {/* Error state */}
+                    {!loading && error && (
+                        <div className="flex flex-col items-center justify-center py-20 gap-3 px-8">
+                            <div className="w-12 h-12 rounded-2xl bg-[rgba(255,80,80,0.08)] border border-[rgba(255,80,80,0.12)] flex items-center justify-center">
+                                <Newspaper size={22} className="text-[rgba(255,80,80,0.4)]" />
+                            </div>
+                            <p className="text-[#666688] text-[14px] font-[Nunito] text-center">{error}</p>
+                        </div>
+                    )}
+
+                    {/* Content */}
+                    {!loading && !error && article && (
+                        <>
+                            {/* Hero image */}
+                            <div className="relative h-64 overflow-hidden rounded-t-[28px]">
+                                {article.imageUrl ? (
+                                    <img
+                                        src={article.imageUrl}
+                                        alt={article.judul}
+                                        className="w-full h-full object-cover"
+                                        onError={e => {
+                                            e.currentTarget.style.display = 'none'
+                                            e.currentTarget.parentElement.style.background = 'linear-gradient(135deg, rgba(110,168,255,0.12), rgba(167,139,250,0.2))'
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-[rgba(110,168,255,0.12)] to-[rgba(167,139,250,0.2)] flex items-center justify-center">
+                                        <Newspaper size={44} className="text-[rgba(110,168,255,0.35)]" />
+                                    </div>
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D1A] via-[#0D0D1A]/20 to-transparent" />
+                            </div>
+
+                            {/* Content body */}
+                            <div className="px-8 pb-10 -mt-4 relative">
+                                <div className="flex items-center gap-2.5 mb-5">
+                                    <span className="flex items-center gap-1.5 text-[#6EA8FF] text-[11.5px] font-semibold bg-[rgba(110,168,255,0.08)] border border-[rgba(110,168,255,0.18)] px-3 py-1 rounded-full">
+                                        <Calendar size={10} />
+                                        {formatDate(article.tanggal)}
+                                    </span>
+                                    {/* <span className="flex items-center gap-1.5 text-[#666688] text-[11.5px] bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)] px-3 py-1 rounded-full">
+                                        <Clock size={10} />
+                                        {readingTime(article.deskripsi)} baca
+                                    </span> */}
+                                </div>
+
+                                <h2 className="font-[Plus_Jakarta_Sans] font-extrabold text-[24px] text-[#E8E8F2] leading-[1.28] mb-5 tracking-[-0.3px]">
+                                    {article.judul}
+                                </h2>
+
+                                <div className="h-px bg-gradient-to-r from-[rgba(110,168,255,0.35)] via-[rgba(167,139,250,0.2)] to-transparent mb-6" />
+
+                                <p className="text-[#9898BC] text-[14.5px] leading-[1.9] font-[Nunito]">
+                                    {article.deskripsi}
+                                </p>
+                            </div>
+                        </>
+                    )}
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
+    )
+}
+
+// Featured Card
+function FeaturedCard({ article, onClick }) {
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            onClick={onClick}
+            className="group relative rounded-[24px] overflow-hidden mb-10 cursor-pointer h-[480px] max-[768px]:h-[380px]"
+        >
+            {article.imageUrl ? (
+                <img
+                    src={article.imageUrl}
+                    alt={article.judul}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    onError={e => { e.currentTarget.style.display = 'none' }}
+                />
+            ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-[rgba(110,168,255,0.2)] to-[rgba(167,139,250,0.3)]" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
+            <div className="absolute top-6 left-6">
+                <span className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[rgba(110,168,255,0.15)] backdrop-blur-md border border-[rgba(110,168,255,0.3)] text-[#6EA8FF] text-[12px] font-bold tracking-wide uppercase">
+                    ✦ Artikel Utama
+                </span>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 p-8 max-[768px]:p-6">
+                <div className="flex items-center gap-3 mb-3">
+                    <span className="flex items-center gap-1.5 text-white/60 text-[12px]">
+                        <Calendar size={11} /> {formatDate(article.tanggal)}
+                    </span>
+                    <span className="w-1 h-1 rounded-full bg-white/30" />
+                    {/* <span className="flex items-center gap-1.5 text-white/60 text-[12px]">
+                        <Clock size={11} /> {readingTime(article.deskripsi)} baca
+                    </span> */}
+                </div>
+                <h2 className="font-[Plus_Jakarta_Sans] font-extrabold text-[28px] max-[768px]:text-[20px] text-white leading-[1.2] mb-3 tracking-[-0.4px] max-w-[680px]">
+                    {article.judul}
+                </h2>
+                <p className="text-white/60 text-[14px] leading-[1.6] max-w-[560px] mb-5 max-[768px]:hidden">
+                    {article.deskripsi?.slice(0, 160)}{article.deskripsi?.length > 160 ? '...' : ''}
+                </p>
+                <motion.div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-[#0D0D1A] text-[13px] font-bold font-[Nunito] group-hover:gap-3 transition-all duration-300">
+                    Baca Selengkapnya <ArrowRight size={14} />
+                </motion.div>
+            </div>
+        </motion.div>
+    )
+}
+
+// Article Card
+function ArticleCard({ article, index, onClick }) {
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.55, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
+            onClick={onClick}
+            className="group cursor-pointer flex flex-col rounded-[18px] overflow-hidden bg-[#0F0F1C] border border-[rgba(255,255,255,0.05)] hover:border-[rgba(110,168,255,0.25)] transition-all duration-400 hover:shadow-[0_24px_64px_rgba(110,168,255,0.07)]"
+        >
+            <div className="relative w-full aspect-[16/9] overflow-hidden bg-[#0A0A14]">
+                {article.imageUrl || article.imageurl ? (
+                    <img
+                        src={article.imageUrl || article.imageurl}
+                        alt={article.judul}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
+                        onError={e => {
+                            e.currentTarget.style.display = 'none'
+                            e.currentTarget.parentElement.style.background = 'linear-gradient(135deg, rgba(167,139,250,0.1), rgba(110,168,255,0.1))'
+                        }}
+                    />
+                ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-[rgba(167,139,250,0.1)] to-[rgba(110,168,255,0.1)] flex items-center justify-center">
+                        <Newspaper size={28} className="text-[rgba(110,168,255,0.25)]" />
+                    </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F1C] via-transparent to-transparent opacity-70" />
+                <div className="absolute top-3 left-3">
+                    <span className="flex items-center gap-1.5 text-[11px] font-semibold text-[#6EA8FF] bg-[rgba(0,0,0,0.55)] backdrop-blur-md border border-[rgba(110,168,255,0.2)] px-2.5 py-1 rounded-full">
+                        <Calendar size={9} />
+                        {formatDate(article.tanggal || article.date)}
+                    </span>
+                </div>
+            </div>
+            <div className="p-5 flex flex-col flex-1 gap-2.5">
+                {/* <span className="flex items-center gap-1.5 text-[11px] text-[#555577] w-fit">
+                    <Clock size={10} />
+                    {readingTime(article.deskripsi || article.excerpt)} baca
+                </span> */}
+                <h3 className="font-[Plus_Jakarta_Sans] font-bold text-[14.5px] leading-[1.45] text-[#DEDEF0] group-hover:text-[#6EA8FF] transition-colors duration-300 line-clamp-2">
+                    {article.judul || article.nama}
+                </h3>
+                <p className="text-[#50507A] text-[12.5px] leading-[1.7] line-clamp-2 flex-1">
+                    {article.deskripsi || article.excerpt}
+                </p>
+                <div className="pt-3 border-t border-[rgba(255,255,255,0.04)] flex items-center justify-between">
+                    <span className="text-[11px] text-[#6EA8FF] font-bold font-[Nunito] tracking-wide uppercase flex items-center gap-1.5 group-hover:gap-2.5 transition-all duration-300">
+                        Baca artikel <ArrowRight size={11} />
+                    </span>
+                </div>
+            </div>
+        </motion.div>
+    )
+}
+
+// Main Component
+export default function News() {
+    const { news, loading, error, retry } = useNews()
+    const [selectedId, setSelectedId] = useState(null)
+
+    const featured = news[0] ?? null
+    const rest = news.slice(1)
+
+    return (
+        <>
+            <div className="pt-[100px]">
+                <PageHero
+                    badge="Berita & Insight"
+                    badgeColor="blue"
+                    title="Cerita &"
+                    titleGradient="Update"
+                    titleSuffix="Terbaru"
+                    description="Temukan artikel, insight, dan update terbaru dari tim NOWA.IO tentang dunia digital dan teknologi."
+                />
+
+                <section className="px-8 pb-32 max-[768px]:px-4">
+                    <div className="max-w-[1280px] mx-auto">
+
+                        {loading && (
+                            <>
+                                <SkeletonFeatured />
+                                <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6">
+                                    {Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)}
+                                </div>
+                            </>
+                        )}
+
+                        {!loading && error && (
+                            <ErrorState message={error} onRetry={retry} label="Gagal memuat berita" />
+                        )}
+
+                        {!loading && !error && featured && (
+                            <>
+                                <FeaturedCard article={featured} onClick={() => setSelectedId(featured.id)} />
+
+                                {rest.length > 0 && (
+                                    <>
+                                        <div className="flex items-center gap-4 mb-7">
+                                            <span className="font-[Plus_Jakarta_Sans] font-bold text-[15px] text-[#8888A8] uppercase tracking-[0.1em]">
+                                                Artikel Lainnya
+                                            </span>
+                                            <div className="flex-1 h-px bg-gradient-to-r from-[rgba(110,168,255,0.2)] to-transparent" />
+                                        </div>
+                                        <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6">
+                                            {rest.map((article, i) => (
+                                                <ArticleCard
+                                                    key={article.id}
+                                                    article={article}
+                                                    index={i}
+                                                    onClick={() => setSelectedId(article.id)}
+                                                />
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </>
+                        )}
+
+                        {!loading && !error && !featured && (
+                            <div className="flex flex-col items-center justify-center py-24 gap-4">
+                                <div className="w-16 h-16 rounded-2xl bg-[rgba(110,168,255,0.08)] border border-[rgba(110,168,255,0.12)] flex items-center justify-center">
+                                    <Newspaper size={28} className="text-[#555577]" />
+                                </div>
+                                <p className="text-[#555577] text-[15px] font-[Nunito]">Belum ada berita tersedia</p>
+                            </div>
+                        )}
+
+                    </div>
+                </section>
+            </div>
+
+            {selectedId && (
+                <DetailModal
+                    articleId={selectedId}
+                    onClose={() => setSelectedId(null)}
+                />
+            )}
+        </>
+    )
 }
