@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Plus } from 'lucide-react'
+import { useForm } from 'react-hook-form'
 import axios from 'axios'
-import { Modal, ConfirmDialog, Table, PageHeader, Badge, Field, inputStyle, Toast, useToast } from '../components/AdminUI'
+import { Modal, ConfirmDialog, Table, PageHeader, Badge, Field, Toast, useToast } from '../components/AdminUI'
 
 const emptyForm = { nama: '', deskripsi: '', imageUrl: '', link_portofolio: '' }
+
+const URL_REGEX = /^(https?:\/\/)[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=%]+$/
 
 export default function AdminPortfolio() {
   const [data, setData] = useState([])
@@ -12,11 +15,19 @@ export default function AdminPortfolio() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editItem, setEditItem] = useState(null)
   const [deleteItem, setDeleteItem] = useState(null)
-  const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [focused, setFocused] = useState(null)
   const { toasts, show } = useToast()
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors },
+  } = useForm({ defaultValues: emptyForm })
+
+  const imageUrlValue = watch('imageUrl')
 
   const fetchData = async () => {
     setLoading(true)
@@ -32,10 +43,15 @@ export default function AdminPortfolio() {
 
   useEffect(() => { fetchData() }, [])
 
-  const openCreate = () => { setEditItem(null); setForm(emptyForm); setModalOpen(true) }
+  const openCreate = () => {
+    setEditItem(null)
+    reset(emptyForm)
+    setModalOpen(true)
+  }
+
   const openEdit = (item) => {
     setEditItem(item)
-    setForm({
+    reset({
       nama: item.nama ?? '',
       deskripsi: item.deskripsi ?? '',
       imageUrl: item.imageUrl ?? '',
@@ -44,15 +60,14 @@ export default function AdminPortfolio() {
     setModalOpen(true)
   }
 
-  const handleSave = async (e) => {
-    e.preventDefault()
+  const onSubmit = async (formData) => {
     setSaving(true)
     try {
       if (editItem) {
-        await axios.put(`https://api-nowaio-production.up.railway.app/api/portofolio/${editItem.id}`, form)
+        await axios.put(`https://api-nowaio-production.up.railway.app/api/portofolio/${editItem.id}`, formData)
         show('Portofolio berhasil diperbarui ✓')
       } else {
-        await axios.post('https://api-nowaio-production.up.railway.app/api/portofolio', form)
+        await axios.post('https://api-nowaio-production.up.railway.app/api/portofolio', formData)
         show('Portofolio berhasil ditambahkan ✓')
       }
       setModalOpen(false)
@@ -78,11 +93,13 @@ export default function AdminPortfolio() {
     }
   }
 
-  const inp = (f) => ({
-    ...inputStyle(focused, f, focused),
-    onFocus: () => setFocused(f),
-    onBlur: () => setFocused(null),
-  })
+  const errStyle = 'mt-1 text-[11px] text-[#FCA5A5]'
+  const inputCls = (hasErr) =>
+    `w-full px-3.5 py-2.5 rounded-xl border text-[13px] text-[#E8E8F0] bg-[rgba(255,255,255,0.03)] outline-none transition-all font-[Nunito] ${
+      hasErr
+        ? 'border-[rgba(239,68,68,0.5)] focus:border-[#EF4444]'
+        : 'border-[rgba(110,168,255,0.15)] focus:border-[#6EA8FF] focus:shadow-[0_0_0_3px_rgba(110,168,255,0.1)]'
+    }`
 
   const columns = [
     { key: 'nama',     label: 'Nama',     render: (v) => <span className="font-bold text-[#6EA8FF]">{v}</span> },
@@ -126,40 +143,51 @@ export default function AdminPortfolio() {
       )}
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editItem ? 'Edit Proyek' : 'Tambah Proyek'} maxWidth={580}>
-        <form onSubmit={handleSave} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
 
           <Field label="Nama Proyek" required>
             <input
-              value={form.nama}
-              onChange={e => setForm(p => ({ ...p, nama: e.target.value }))}
-              required
+              {...register('nama', {
+                required: 'Nama proyek wajib diisi',
+                minLength: { value: 3, message: 'Nama minimal 3 karakter' },
+                maxLength: { value: 100, message: 'Nama maksimal 100 karakter' },
+              })}
               placeholder="FinTrack Dashboard"
-              style={inp('nama')}
+              className={inputCls(errors.nama)}
             />
+            {errors.nama && <p className={errStyle}>{errors.nama.message}</p>}
           </Field>
 
           <Field label="Deskripsi" required>
             <textarea
-              value={form.deskripsi}
-              onChange={e => setForm(p => ({ ...p, deskripsi: e.target.value }))}
-              required
+              {...register('deskripsi', {
+                required: 'Deskripsi proyek wajib diisi',
+                minLength: { value: 10, message: 'Deskripsi minimal 10 karakter' },
+                maxLength: { value: 1000, message: 'Deskripsi maksimal 1000 karakter' },
+              })}
               rows={3}
-              placeholder="Deskripsi singkat proyek..."
-              style={{ ...inp('deskripsi'), resize: 'vertical' }}
+              placeholder="Deskripsi proyek..."
+              className={inputCls(errors.deskripsi)}
+              style={{ resize: 'vertical' }}
             />
+            {errors.deskripsi && <p className={errStyle}>{errors.deskripsi.message}</p>}
           </Field>
 
           <Field label="URL Gambar" required>
             <input
-              value={form.imageUrl}
-              onChange={e => setForm(p => ({ ...p, imageUrl: e.target.value }))}
+              {...register('imageUrl', {
+                required: 'URL gambar wajib diisi',
+                validate: (val) =>
+                  !val || URL_REGEX.test(val) || 'URL gambar tidak valid (harus diawali https://)',
+              })}
               placeholder="https://example.com/gambar.jpg"
-              style={inp('imageUrl')}
+              className={inputCls(errors.imageUrl)}
             />
-            {form.imageUrl && (
+            {errors.imageUrl && <p className={errStyle}>{errors.imageUrl.message}</p>}
+            {imageUrlValue && URL_REGEX.test(imageUrlValue) && (
               <div className="mt-2 rounded-xl overflow-hidden h-36 border border-[rgba(110,168,255,0.15)]">
                 <img
-                  src={form.imageUrl}
+                  src={imageUrlValue}
                   alt="Preview"
                   className="w-full h-full object-cover"
                   onError={e => { e.currentTarget.parentElement.style.display = 'none' }}
@@ -170,11 +198,15 @@ export default function AdminPortfolio() {
 
           <Field label="Link Portofolio" required>
             <input
-              value={form.link_portofolio}
-              onChange={e => setForm(p => ({ ...p, link_portofolio: e.target.value }))}
+              {...register('link_portofolio', {
+                required: 'Link portofolio wajib diisi',
+                validate: (val) =>
+                  URL_REGEX.test(val) || 'URL tidak valid (harus diawali https://)',
+              })}
               placeholder="https://example.com/project"
-              style={inp('link_portofolio')}
+              className={inputCls(errors.link_portofolio)}
             />
+            {errors.link_portofolio && <p className={errStyle}>{errors.link_portofolio.message}</p>}
           </Field>
 
           <div className="flex gap-2.5 pt-1">

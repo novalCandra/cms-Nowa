@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Plus } from 'lucide-react'
+import { useForm } from 'react-hook-form'
 import axios from 'axios'
-import { Modal, ConfirmDialog, Table, PageHeader, Field, inputStyle, Toast, useToast } from '../components/AdminUI'
+import { Modal, ConfirmDialog, Table, PageHeader, Field, Toast, useToast } from '../components/AdminUI'
 
 const emptyForm = {
   judul: '',
@@ -11,17 +12,28 @@ const emptyForm = {
   tanggal: '',
 }
 
+const URL_REGEX = /^(https?:\/\/)[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=%]+$/
+
 export default function AdminNews() {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editItem, setEditItem] = useState(null)
   const [deleteItem, setDeleteItem] = useState(null)
-  const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [focused, setFocused] = useState(null)
   const { toasts, show } = useToast()
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setFocus,
+    formState: { errors },
+  } = useForm({ defaultValues: emptyForm })
+
+  const imageUrlValue = watch('imageUrl')
 
   const fetchData = async () => {
     setLoading(true)
@@ -37,10 +49,15 @@ export default function AdminNews() {
 
   useEffect(() => { fetchData() }, [])
 
-  const openCreate = () => { setEditItem(null); setForm(emptyForm); setModalOpen(true) }
+  const openCreate = () => {
+    setEditItem(null)
+    reset(emptyForm)
+    setModalOpen(true)
+  }
+
   const openEdit = (item) => {
     setEditItem(item)
-    setForm({
+    reset({
       judul: item.judul ?? '',
       deskripsi: item.deskripsi ?? '',
       imageUrl: item.imageUrl ?? '',
@@ -49,15 +66,14 @@ export default function AdminNews() {
     setModalOpen(true)
   }
 
-  const handleSave = async (e) => {
-    e.preventDefault()
+  const onSubmit = async (formData) => {
     setSaving(true)
     try {
       if (editItem) {
-        await axios.put(`https://api-nowaio-production.up.railway.app/api/berita/${editItem.id}`, form)
+        await axios.put(`https://api-nowaio-production.up.railway.app/api/berita/${editItem.id}`, formData)
         show('Berita berhasil diperbarui ✓')
       } else {
-        await axios.post('https://api-nowaio-production.up.railway.app/api/berita', form)
+        await axios.post('https://api-nowaio-production.up.railway.app/api/berita', formData)
         show('Berita berhasil ditambahkan ✓')
       }
       setModalOpen(false)
@@ -83,11 +99,13 @@ export default function AdminNews() {
     }
   }
 
-  const inp = (f) => ({
-    ...inputStyle(focused, f, focused),
-    onFocus: () => setFocused(f),
-    onBlur: () => setFocused(null),
-  })
+  const errStyle = 'mt-1 text-[11px] text-[#FCA5A5]'
+  const inputCls = (hasErr) =>
+    `w-full px-3.5 py-2.5 rounded-xl border text-[13px] text-[#E8E8F0] bg-[rgba(255,255,255,0.03)] outline-none transition-all font-[Nunito] ${
+      hasErr
+        ? 'border-[rgba(239,68,68,0.5)] focus:border-[#EF4444]'
+        : 'border-[rgba(110,168,255,0.15)] focus:border-[#6EA8FF] focus:shadow-[0_0_0_3px_rgba(110,168,255,0.1)]'
+    }`
 
   const columns = [
     { key: 'judul',    label: 'Judul',    render: (v) => <span className="font-bold text-[#6EA8FF] max-w-[280px] block truncate">{v}</span> },
@@ -127,40 +145,51 @@ export default function AdminNews() {
       )}
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editItem ? 'Edit Berita' : 'Tulis Berita Baru'} maxWidth={620}>
-        <form onSubmit={handleSave} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
 
           <Field label="Judul Berita" required>
             <input
-              value={form.judul}
-              onChange={e => setForm(p => ({ ...p, judul: e.target.value }))}
-              required
+              {...register('judul', {
+                required: 'Judul berita wajib diisi',
+                minLength: { value: 5, message: 'Judul minimal 5 karakter' },
+                maxLength: { value: 150, message: 'Judul maksimal 150 karakter' },
+              })}
               placeholder="Judul artikel yang menarik..."
-              style={inp('judul')}
+              className={inputCls(errors.judul)}
             />
+            {errors.judul && <p className={errStyle}>{errors.judul.message}</p>}
           </Field>
 
           <Field label="Deskripsi" required>
             <textarea
-              value={form.deskripsi}
-              onChange={e => setForm(p => ({ ...p, deskripsi: e.target.value }))}
-              required
+              {...register('deskripsi', {
+                required: 'Deskripsi berita wajib diisi',
+                minLength: { value: 10, message: 'Deskripsi minimal 10 karakter' },
+                maxLength: { value: 1000, message: 'Deskripsi maksimal 1000 karakter' },
+              })}
               rows={3}
               placeholder="Deskripsi singkat berita..."
-              style={{ ...inp('deskripsi'), resize: 'vertical' }}
+              className={inputCls(errors.deskripsi)}
+              style={{ resize: 'vertical' }}
             />
+            {errors.deskripsi && <p className={errStyle}>{errors.deskripsi.message}</p>}
           </Field>
 
           <Field label="URL Gambar" required>
             <input
-              value={form.imageUrl}
-              onChange={e => setForm(p => ({ ...p, imageUrl: e.target.value }))}
+              {...register('imageUrl', {
+                required: 'Gambar Berita wajib diisi',
+                validate: (val) =>
+                  !val || URL_REGEX.test(val) || 'URL gambar tidak valid (harus diawali https://)',
+              })}
               placeholder="https://example.com/gambar-berita.jpg"
-              style={inp('imageUrl')}
+              className={inputCls(errors.imageUrl)}
             />
-            {form.imageUrl && (
+            {errors.imageUrl && <p className={errStyle}>{errors.imageUrl.message}</p>}
+            {imageUrlValue && URL_REGEX.test(imageUrlValue) && (
               <div className="mt-2 rounded-xl overflow-hidden h-36 border border-[rgba(110,168,255,0.15)]">
                 <img
-                  src={form.imageUrl}
+                  src={imageUrlValue}
                   alt="Preview"
                   className="w-full h-full object-cover"
                   onError={e => { e.currentTarget.parentElement.style.display = 'none' }}
@@ -172,11 +201,18 @@ export default function AdminNews() {
           <Field label="Tanggal" required>
             <input
               type="date"
-              value={form.tanggal}
-              onChange={e => setForm(p => ({ ...p, tanggal: e.target.value }))}
-              required
-              style={inp('tanggal')}
+              {...register('tanggal', {
+                required: 'Tanggal berita wajib diisi',
+                validate: (val) => {
+                  const selected = new Date(val)
+                  const today = new Date()
+                  today.setHours(0, 0, 0, 0)
+                  return selected <= today || 'Tanggal tidak boleh di masa depan'
+                },
+              })}
+              className={inputCls(errors.tanggal)}
             />
+            {errors.tanggal && <p className={errStyle}>{errors.tanggal.message}</p>}
           </Field>
 
           <div className="flex gap-2.5 pt-1">
