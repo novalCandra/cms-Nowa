@@ -1,122 +1,112 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useDarkMode } from './hooks/useDarkMode'
+import { AuthProvider } from './hooks/useAuth'
+import { useAuth } from './hooks/useAuth'
+import Navbar from './components/Navbar'
+import Footer from './components/Footer'
+import Home from './pages/HomePage'
+import Services from './pages/ServicesPage'
+import Portfolio from './pages/PortofolioPage'
+import News from './pages/NewsPage'
+import Contact from './pages/ContactPage'
+import AdminLogin from './admin/pages/AdminLogin'
+import AdminLayout from './admin/AdminLayout'
+import AdminDashboard from './admin/pages/AdminDashboard'
+import AdminServices from './admin/pages/AdminServices'
+import AdminPortfolio from './admin/pages/AdminPortofolio'
+import AdminNews from './admin/pages/AdminNews'
 
-function App() {
-  const [count, setCount] = useState(0)
-
+// PUBLIC LAYOUT
+function PublicLayout({ isDark, setIsDark, children }) {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    <div
+      className={`min-h-screen transition-colors duration-400 
+          ${isDark
+          ? 'bg-[#0A0A0F] text-[#E8E8F0] dark'
+          : 'bg-[#F0F4FF] text-[#1A1A2E] light'
+        }`}
+    >
+      <Navbar isDark={isDark} setIsDark={setIsDark} />
+      {children}
+      <Footer isDark={isDark} />
+    </div>
   )
 }
 
-export default App
+// PROTECTED ROUTE
+function ProtectedAdmin({ children }) {
+  const { user, loading } = useAuth()
+
+  if (loading) return <div>Loading...</div>
+  if (!user) return <Navigate to="/admin/login" replace />
+
+  return children
+}
+
+function AppRoutes({ isDark, setIsDark }) {
+  return (
+    <Routes>
+      {/* PUBLIC ROUTES */}
+      <Route path="/" element={
+        <PublicLayout isDark={isDark} setIsDark={setIsDark}>
+          <Home isDark={isDark} />
+        </PublicLayout>
+      } />
+
+      <Route path="/layanan" element={
+        <PublicLayout isDark={isDark} setIsDark={setIsDark}>
+          <Services isDark={isDark} />
+        </PublicLayout>
+      } />
+
+      <Route path="/portofolio" element={
+        <PublicLayout isDark={isDark} setIsDark={setIsDark}>
+          <Portfolio isDark={isDark} />
+        </PublicLayout>
+      } />
+
+      <Route path="/berita" element={
+        <PublicLayout isDark={isDark} setIsDark={setIsDark}>
+          <News isDark={isDark} />
+        </PublicLayout>
+      } />
+
+      <Route path="/kontak" element={
+        <PublicLayout isDark={isDark} setIsDark={setIsDark}>
+          <Contact isDark={isDark} />
+        </PublicLayout>
+      } />
+
+      {/* ADMIN ROUTES */}
+      <Route path="/admin/login" element={<AdminLogin />} />
+
+      <Route
+        path="/admin"
+        element={
+          <ProtectedAdmin>
+            <AdminLayout />
+          </ProtectedAdmin>
+        }
+      >
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="layanan" element={<AdminServices />} />
+        <Route path="portofolio" element={<AdminPortfolio />} />
+        <Route path="berita" element={<AdminNews />} />
+      </Route>
+    </Routes>
+  )
+}
+
+// APP
+export default function App() {
+  const [isDark, setIsDark] = useDarkMode()
+
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <AppRoutes isDark={isDark} setIsDark={setIsDark} />
+      </BrowserRouter>
+    </AuthProvider>
+  )
+}
